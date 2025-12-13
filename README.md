@@ -5,7 +5,18 @@ Rather than encrypting data directly with Kyber, this library follows **industry
 > **Kyber KEM → Shared Secret → AEAD (ChaCha20-Poly1305)**
 
 This approach protects today’s communications and stored data against **future quantum attacks** (“harvest now, decrypt later”).
-
+>  **Warning**
+>
+> This crate provides **cryptographic building blocks only**.
+>
+> It does **NOT** implement:
+> - Authentication or identity verification
+> - Replay protection
+> - Key lifecycle management
+> - A full network or transport protocol (e.g., TLS)
+>
+> Users are responsible for integrating these primitives
+> into a secure, authenticated protocol design.
 ---
 
 ##  Key Capabilities
