@@ -1,15 +1,19 @@
-use quantumcryptlib::key_exchange::{generate_key_pair, encrypt, decrypt};
+use quantumcryptlib::key_exchange::{decapsulate, encapsulate, generate_key_pair};
+use quantumcryptlib::secure_channel::{aead_decrypt, aead_encrypt};
 
 #[test]
-fn test_multiple_key_exchange_cycles() {
+fn test_multiple_pq_secure_channel_cycles() {
     for _ in 0..10 {
         let (pk, sk) = generate_key_pair();
-        let result = encrypt(&pk).expect("Encryption failed");
 
-        let (shared_secret, ciphertext) = result;
-        let decrypted_secret = decrypt(&sk, &ciphertext).expect("Decryption failed");
+        let (ss_a, kem_ct) = encapsulate(&pk).expect("Encapsulation failed");
+        let ss_b = decapsulate(&sk, &kem_ct).expect("Decapsulation failed");
+        assert_eq!(ss_a, ss_b);
 
-        assert_eq!(shared_secret, decrypted_secret);
+        let msg = b"test message";
+        let (nonce, ct) = aead_encrypt(&ss_a, msg).expect("AEAD encrypt failed");
+        let pt = aead_decrypt(&ss_b, &nonce, &ct).expect("AEAD decrypt failed");
+
+        assert_eq!(msg.to_vec(), pt);
     }
 }
-

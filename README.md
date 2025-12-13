@@ -1,12 +1,50 @@
-# QuantumCryptLib
+**QuantumCryptLib** is a Rust library for building **post-quantum secure communication channels** using **Kyber512** (a NIST-selected post-quantum Key Encapsulation Mechanism) combined with modern **AEAD encryption**.
 
- **QuantumCryptLib** is a post-quantum cryptographic library built using **Kyber512** (from the `pqcrypto_kyber` crate). It provides quantum-resistant **key exchange**, **encryption**, and **decryption** functionalities.
+Rather than encrypting data directly with Kyber, this library follows **industry-correct cryptographic design**:
 
-## Features
--  Quantum-resistant **key exchange** (Kyber512)
--  Secure **encryption & decryption** using Kyber512's encapsulation mechanism
--  Lightweight and efficient for **post-quantum security applications**
--  Written in **Rust**  for high performance and safety
+> **Kyber KEM → Shared Secret → AEAD (ChaCha20-Poly1305)**
+
+This approach protects today’s communications and stored data against **future quantum attacks** (“harvest now, decrypt later”).
+
+---
+
+##  Key Capabilities
+
+-  **Post-quantum key establishment** using **Kyber512 (KEM)**
+-  **Shared secret derivation** for secure sessions
+-  **Authenticated encryption** via **ChaCha20-Poly1305**
+-  Fully tested **secure channel handshake**
+-  Written in **Rust 2021** for safety and performance
+
+---
+
+##  Cryptographic Model (Important)
+
+Kyber512 is a **Key Encapsulation Mechanism (KEM)** — it is **not** used to encrypt application data directly.
+
+QuantumCryptLib implements the recommended construction:
+
+1. **Key Encapsulation (Kyber512)**  
+   Establishes a shared secret between two parties
+2. **Key Derivation**  
+   Derives a symmetric encryption key from the shared secret
+3. **AEAD Encryption (ChaCha20-Poly1305)**  
+   Encrypts and authenticates application data
+
+This model is used in:
+- Post-quantum TLS / mTLS
+- Zero-Trust service-to-service communication
+- Secure tunnels and long-term data protection
+
+---
+
+##  Real-World Use Cases
+
+- **Post-Quantum Secure Channels** (TLS / mTLS alternatives)
+- **Zero-Trust Microservices Communication**
+- **Long-Term Data Protection & Archival Encryption**
+- **Financial, Government, and Critical Infrastructure Systems**
+- **Blockchain & Distributed System Secure Messaging**
 
 ---
 
@@ -21,31 +59,71 @@ cargo build
 cargo run --bin quantumcryptlib_bin
 
 ## Usage
- **Generating Key Pairs**
+ **Generating Kyber Key Pair**
 use quantumcryptlib::key_exchange::generate_key_pair;
 
 let (public_key, secret_key) = generate_key_pair();
-println!("Public Key: {:?}", public_key);
-println!("Secret Key: {:?}", secret_key);
 
- **Encrypting Data**
-use quantumcryptlib::key_exchange::encrypt;
+ **Establish a Post-Quantum Shared Secret (KEM)**
+use quantumcryptlib::key_exchange::{encapsulate, decapsulate};
 
-let (shared_secret, ciphertext) = encrypt(&public_key).expect("Encryption failed");
-println!("Shared Secret: {:?}", shared_secret);
-println!("Ciphertext: {:?}", ciphertext);
+// Initiator
+let (shared_secret_a, kem_ciphertext) = encapsulate(&public_key)?;
 
- **Decrypting Data**
-use quantumcryptlib::key_exchange::decrypt;
+// Responder
+let shared_secret_b = decapsulate(&secret_key, &kem_ciphertext)?;
 
-let decrypted_secret = decrypt(&secret_key, &ciphertext).expect("Decryption failed");
-assert_eq!(shared_secret, decrypted_secret);
+assert_eq!(shared_secret_a, shared_secret_b);
 
-## Contributing
- **Contributions are welcome!**
+ **Encrypt and Decrypt Data Using AEAD**
+use quantumcryptlib::secure_channel::{aead_encrypt, aead_decrypt};
 
-Fork the repo
-Create a new branch (git checkout -b feature-branch)
-Commit your changes (git commit -m "Added a new feature")
-Push to your branch (git push origin feature-branch)
-Submit a pull request
+let message = b"hello post-quantum world";
+
+// Encrypt
+let (nonce, ciphertext) = aead_encrypt(&shared_secret_a, message)?;
+
+// Decrypt
+let plaintext = aead_decrypt(&shared_secret_b, &nonce, &ciphertext)?;
+
+assert_eq!(message.to_vec(), plaintext);
+
+##  Testing
+
+Integration tests validate the following:
+
+- Multiple independent KEM handshakes
+- Shared secret correctness
+- AEAD encryption and decryption cycles
+
+### Run tests
+
+```bash
+cargo test
+
+##  Security Notes
+
+- Secrets are **never printed**
+- AEAD ensures **confidentiality and authenticity**
+- Kyber512 is **NIST-selected** for post-quantum key exchange
+- This library is a **secure communication building block**, not a full TLS replacement
+
+### Planned Hardening
+
+- HKDF
+- Hybrid classical + post-quantum key exchange
+- Secret zeroization
+- `no_std` support
+
+---
+
+##  Contributing
+
+1. Fork the repository  
+2. Create a feature branch  
+   ```sh
+   git checkout -b feature-branch
+3. Commit your changes
+   ```sh
+   git commit -m "Add feature"
+4. Push and open a pull request
