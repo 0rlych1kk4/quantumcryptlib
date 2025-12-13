@@ -53,18 +53,21 @@ This model is used in:
 ```sh
 git clone https://github.com/0rlych1kk4/quantumcryptlib.git
 cd quantumcryptlib
-
+```
 ## Build project:
+```sh
 cargo build
 cargo run --bin quantumcryptlib_bin
-
+```
 ## Usage
  **Generating Kyber Key Pair**
+ ```sh
 use quantumcryptlib::key_exchange::generate_key_pair;
 
 let (public_key, secret_key) = generate_key_pair();
-
+```
  **Establish a Post-Quantum Shared Secret (KEM)**
+```sh
 use quantumcryptlib::key_exchange::{encapsulate, decapsulate};
 
 // Initiator
@@ -87,7 +90,8 @@ let (nonce, ciphertext) = aead_encrypt(&shared_secret_a, message)?;
 let plaintext = aead_decrypt(&shared_secret_b, &nonce, &ciphertext)?;
 
 assert_eq!(message.to_vec(), plaintext);
-
+```
+---
 ##  Testing
 
 Integration tests validate the following:
@@ -100,14 +104,15 @@ Integration tests validate the following:
 
 ```bash
 cargo test
-
+```
+---
 ##  Security Notes
 
 - Secrets are **never printed**
 - AEAD ensures **confidentiality and authenticity**
 - Kyber512 is **NIST-selected** for post-quantum key exchange
 - This library is a **secure communication building block**, not a full TLS replacement
-
+---
 ### Planned Hardening
 
 - HKDF
@@ -127,3 +132,4 @@ cargo test
    ```sh
    git commit -m "Add feature"
 4. Push and open a pull request
+---
